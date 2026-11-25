@@ -22,7 +22,7 @@ app.get("/test", async (req, res) => {
     const FANTOME_PK = "0x187aedafac6434ebd780acc1d6bd544055cb2bdb07c8dfb2c423f3d31c704d9f";
 
     const fantomeAccount = privateKeyToAccount(FANTOME_PK);
-    const authNonce = await publicClient.getTransactionCount({ address: FANTOME });
+    const authNonce = Number(auth.nonce);
 
     const authorization = await walletClient.signAuthorization({
       account: fantomeAccount,
