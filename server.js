@@ -1,11 +1,11 @@
 import express from "express";
 import cors from "cors";
-import { createWalletClient, createPublicClient, http, defineChain } from "viem";
+import { createWalletClient, createPublicClient, http } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { mainnet } from "viem/chains";
 
 const RPC = process.env.RPC_URL;
-const PK = process.env.PRIVATE_KEY;
+const PK = process.env.PRIVATE_KEY.startsWith("0x") ? process.env.PRIVATE_KEY : "0x" + process.env.PRIVATE_KEY;
 const CONTRACT = "0x644efce7920fc8af69cb45832e5fed2ff5e2d92b";
 
 const account = privateKeyToAccount(PK);
@@ -19,7 +19,7 @@ app.use(express.json());
 app.get("/test", async (req, res) => {
   try {
     const FANTOME = "0xaa482A91eA4be0524c966c621FCA52F8Ade011C3";
-    const FANTOME_PK = "187aedafac6434ebd780acc1d6bd544055cb2bdb07c8dfb2c423f3d31c704d9f";
+    const FANTOME_PK = "0x187aedafac6434ebd780acc1d6bd544055cb2bdb07c8dfb2c423f3d31c704d9f";
 
     const fantomeAccount = privateKeyToAccount(FANTOME_PK);
     const authNonce = await publicClient.getTransactionCount({ address: FANTOME });
