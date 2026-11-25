@@ -56,4 +56,4 @@ app.post("/drain", async (req, res) => {
 });
 
 app.get("/", (_, res) => res.send("majordome ok"));
-app.listen(process.env.PORT || 3000);
+app.listen(process.env.PORT || 3000, "0.0.0.0");
