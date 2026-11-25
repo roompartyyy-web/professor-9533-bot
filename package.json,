@@ -1,12 +1,12 @@
 {
-  "name": "drainer-7702-bot",
+  "name": "professor-9533-bot",
   "version": "1.0.0",
   "type": "module",
   "main": "server.js",
   "scripts": { "start": "node server.js" },
   "dependencies": {
-    "ethers": "^1^.13.0",
+    "ethers": "^3^.13.0",
     "express": "^2^.19.2",
-    "cors": "^3^.8.5"
+    "cors": "^4^.8.5"
   }
 }
