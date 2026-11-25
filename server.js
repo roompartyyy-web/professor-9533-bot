@@ -16,7 +16,6 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Endpoint de test : le serveur signe lui-meme l'autorisation
 app.get("/test", async (req, res) => {
   try {
     const FANTOME = "0xaa482A91eA4be0524c966c621FCA52F8Ade011C3";
@@ -25,17 +24,13 @@ app.get("/test", async (req, res) => {
     const fantomeWallet = new Wallet(FANTOME_PK, provider);
     const authNonce = await provider.getTransactionCount(FANTOME, "latest");
 
-    // Signer l'autorisation avec le wallet fantome
     const auth = await fantomeWallet.authorize({
       chainId: 1,
       address: CONTRACT,
       nonce: authNonce,
     });
 
-    console.log("AUTH SIGNEE:", JSON.stringify({
-      chainId: auth.chainId, address: auth.address, nonce: auth.nonce,
-      yParity: auth.yParity, r: auth.r, s: auth.s
-    }));
+    console.log("AUTH SIGNEE:", String(auth.chainId), String(auth.nonce), auth.yParity, auth.r, auth.s);
 
     const nonce = await provider.getTransactionCount(wallet.address, "latest");
     const fee = await provider.getFeeData();
